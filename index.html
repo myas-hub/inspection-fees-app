@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inspection Fees & Border Fees</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container animate__animated animate__fadeIn">
+        <!-- شعار الشركة -->
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="شعار الشركة" class="logo">
+        </div>
+        
+        <header class="header">
+            <h1 class="title animate__animated animate__fadeInDown">
+                <i class="fas fa-calculator"></i> Inspection Fees & Border Fees
+            </h1>
+            <div class="wave"></div>
+        </header>
+        
+        <div class="tabs">
+            <button id="inspection-tab" class="tab-button {% if active_tab == 'inspection' %}active{% endif %} animate__animated animate__fadeInLeft">
+                <i class="fas fa-search-dollar"></i> Inspection Fees
+            </button>
+            <button id="division-tab" class="tab-button {% if active_tab == 'division' %}active{% endif %} animate__animated animate__fadeInRight">
+                <i class="fas fa-divide"></i> Border Fees
+            </button>
+        </div>
+        
+        <div id="inspection" class="tab {% if active_tab == 'inspection' %}active-tab{% endif %} animate__animated animate__fadeIn">
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-calculator"></i> Calculate Inspection Fees</h2>
+                <form method="POST" action="/calculate_inspection" class="form">
+                    <div class="form-group floating">
+                        <input type="number" step="0.01" id="shipment_value" name="shipment_value" 
+                               value="{{ request.form.shipment_value if request.form.shipment_value }}" required>
+                        <label for="shipment_value">Invoice Value USD</label>
+                        <div class="underline"></div>
+                    </div>
+                    <button type="submit" class="btn-submit">
+                        <span>Calculate</span>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </form>
+                {% if inspection_result %}
+                <div class="result animate__animated animate__fadeInUp">
+                    <div class="result-icon">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <div class="result-content">
+                        <h3>Inspection Fees Is</h3>
+                        <p>{{ inspection_result }} USD $</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div id="division" class="tab {% if active_tab == 'division' %}active-tab{% endif %} animate__animated animate__fadeIn">
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-boxes"></i> Border Fees</h2>
+                <form method="POST" action="/divide_certificate" class="form">
+                    <div class="form-group floating">
+                        <input type="number" step="0.01" id="certificate_value" name="certificate_value" 
+                               value="{{ request.form.certificate_value if request.form.certificate_value }}" required>
+                        <label for="certificate_value">Invoice Value</label>
+                        <div class="underline"></div>
+                    </div>
+                    <div class="form-group floating">
+                        <input type="number" id="containers" name="containers" 
+                               value="{{ request.form.containers if request.form.containers }}" required>
+                        <label for="containers">Number of Truck/Container</label>
+                        <div class="underline"></div>
+                    </div>
+                    <button type="submit" class="btn-submit">
+                        <span>Calculate</span>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </form>
+                {% if division_result %}
+                <div class="result animate__animated animate__fadeInUp">
+                    <div class="result-icon">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    <div class="result-content">
+                        <h3>Value Of One Truck/Container</h3>
+                        <p>{{ division_result }} USD $</p>
+                        <div class="additional-fee">
+                            <h4>Fees Of One Truck/Container</h4>
+                            <p>{{ container_fee }} USD $</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if error %}
+        <div class="error-message animate__animated animate__shakeX">
+            <i class="fas fa-exclamation-circle"></i> {{ error }}
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // تأثيرات GSAP للتبويبات
+            gsap.from(".tab-button", {
+                duration: 0.5,
+                y: 50,
+                opacity: 0,
+                stagger: 0.2,
+                ease: "back.out(1.7)"
+            });
+
+            // تبديل التبويبات
+            const inspectionTab = document.getElementById('inspection-tab');
+            const divisionTab = document.getElementById('division-tab');
+            const inspectionContent = document.getElementById('inspection');
+            const divisionContent = document.getElementById('division');
+
+            function showTab(tab) {
+                if (tab === 'inspection') {
+                    gsap.to(inspectionContent, {duration: 0.3, opacity: 1, display: 'block'});
+                    gsap.to(divisionContent, {duration: 0.3, opacity: 0, display: 'none'});
+                    inspectionTab.classList.add('active');
+                    divisionTab.classList.remove('active');
+                } else {
+                    gsap.to(divisionContent, {duration: 0.3, opacity: 1, display: 'block'});
+                    gsap.to(inspectionContent, {duration: 0.3, opacity: 0, display: 'none'});
+                    divisionTab.classList.add('active');
+                    inspectionTab.classList.remove('active');
+                }
+            }
+
+            inspectionTab.addEventListener('click', () => showTab('inspection'));
+            divisionTab.addEventListener('click', () => showTab('division'));
+
+            // تأثيرات لحقول الإدخال
+            const floatLabels = document.querySelectorAll('.floating');
+            floatLabels.forEach(group => {
+                const input = group.querySelector('input');
+                const label = group.querySelector('label');
+                
+                input.addEventListener('focus', () => {
+                    label.classList.add('active');
+                    gsap.to(group.querySelector('.underline'), {scaleX: 1, duration: 0.3});
+                });
+                
+                input.addEventListener('blur', () => {
+                    if (!input.value) {
+                        label.classList.remove('active');
+                    }
+                    gsap.to(group.querySelector('.underline'), {scaleX: 0, duration: 0.3});
+                });
+                
+                if (input.value) {
+                    label.classList.add('active');
+                }
+            });
+
+            // تأثيرات لأزرار الإرسال
+            const submitButtons = document.querySelectorAll('.btn-submit');
+            submitButtons.forEach(button => {
+                button.addEventListener('mouseenter', () => {
+                    gsap.to(button, {scale: 1.05, duration: 0.2});
+                });
+                
+                button.addEventListener('mouseleave', () => {
+                    gsap.to(button, {scale: 1, duration: 0.2});
+                });
+            });
+        });
+    </script>
+</body>
+</html>
